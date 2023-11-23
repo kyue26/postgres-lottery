@@ -146,6 +146,32 @@ async function getSizeDatabase() {
     return parseInt(res.rows[0].row_count, 10);
 }
 
+async function deleteRows() {
+        //create client
+        const client = new pg.Client({
+            //if you want the following to work on your own computer
+            //replace the fields with your information
+            user: 'postgres',
+            database: 'postgres',
+            password: 'strokeseat', 
+            port: 5432,
+        });
+    
+        //connect client
+        await client.connect();
+    
+        const tableName = 'users';
+        const queryText = 'DELETE FROM ' + tableName + ';';
+    
+        const res = await client.query(queryText);
+        console.log(res);
+        
+        //close connection
+        await client.end();
+    
+        return res;
+}
+
 app.get('', async (req, res) => {
     const nameCards = await getAllFromDatabase();
     res.send(nameCards);
@@ -184,6 +210,11 @@ app.post('/newuser', async (req, res) => {
     const response = await insertIntoDatabase(req.body.id);
     res.send(response);
 
+})
+
+app.get('/delete', async (req, res) => {
+    const response = await deleteRows();
+    res.send(response);
 })
 
 const port = 3256

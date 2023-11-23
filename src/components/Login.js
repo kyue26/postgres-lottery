@@ -79,6 +79,21 @@ function Login(props) {
         }) 
     }
 
+    function deleteAll() {
+        Axios.get('http://localhost:3256/delete')
+        .then(function(response) {
+            console.log('response successfully received, response below')
+            console.log(response)
+            setTickets(0);
+            setWinner('');
+        }).catch(function (error) {
+            console.log('response unsusccessfully received, error below')
+            console.log(error)
+        }).finally(function (){
+            console.log("This part is always executed no matter what")
+        }) 
+    }
+
     const [showTix, setShowTix] = useState(false);
     const [username, setUsername] = useState('');
     const [showWinner, setShowWinner] = useState(false);
@@ -98,11 +113,12 @@ function Login(props) {
                     <p>you have {tickets} tickets.</p>
                     <button id="tix" onClick={e => incTix(username)}>buy tickets!</button>
                     <button id="pick" onClick={e => pickWinner()}>pick a winner!</button>
+                    <button id="delete" onClick={e => deleteAll()}>empty lottery</button>
                 </div>
             ) : (
                 <p>Please login.</p>
             )}
-            {showWinner ? (
+            {(showWinner && winner != '') ? (
                 <p>the winner is {winner}! congratulations.</p>
             ) : (
                 <p></p>
