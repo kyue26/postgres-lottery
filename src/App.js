@@ -7,8 +7,6 @@ function App() {
     <div className="App">
       <h1>lottery!</h1>
       <Login/>
-      <button>buy tickets!</button>
-      <button>pick a winner!</button>
     </div>
   );
 }

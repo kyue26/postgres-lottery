@@ -4,10 +4,8 @@ const express = require('express')
 const cors = require('cors')
 const app = express()
 app.use(cors())
+app.use(express.json());
 
-app.config(function(){
-    app.use(express.bodyParser());
-});
 
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
@@ -58,17 +56,41 @@ async function getTixFromDatabase(name) {
     
     //connect client
     await client.connect();
-
     const tableName = 'users';
-    const queryText = 'SELECT user_tickets FROM ' + tableName + ' WHERE user_id = ' + name + ';';
+    const queryText = 'SELECT * FROM ' + tableName + ' WHERE user_id = \'' + name + '\';';
 
     const res = await client.query(queryText);
-    console.log(res);
     
     //close connection
     await client.end();
 
     return res;
+}
+
+async function updateTixDatabase(name) {
+        //create client
+        const client = new pg.Client({
+            //if you want the following to work on your own computer
+            //replace the fields with your information
+            user: 'postgres',
+            database: 'postgres',
+            password: 'strokeseat', 
+            port: 5432,
+        });
+    
+        //connect client
+        await client.connect();
+    
+        const tableName = 'users';
+        const queryText = 'UPDATE ' + tableName + ' SET user_tickets = user_tickets + 1 WHERE user_id = \'' + name + '\';';
+    
+        const res = await client.query(queryText);
+        console.log(res);
+        
+        //close connection
+        await client.end();
+    
+        return res;    
 }
 
 async function getUserFromDatabase(num) {
@@ -86,8 +108,8 @@ async function getUserFromDatabase(num) {
         await client.connect();
     
         const tableName = 'users';
-        const dec = num - 1;
-        const queryText = 'SELECT * FROM ' + tableName + ' ORDER BY user_id OFFSET ' + dec + ' LIMIT 1;';
+        //const dec = num - 1;
+        const queryText = 'SELECT * FROM ' + tableName + ' WHERE user_tickets > 0 ORDER BY user_tickets OFFSET ' + num + ' LIMIT 1;';
     
         const res = await client.query(queryText);
         console.log(res);
@@ -98,8 +120,7 @@ async function getUserFromDatabase(num) {
         return res;
 }
 
-// here we get all the users from the table
-async function getAllFromDatabase() {
+async function getSizeDatabase() {
     //create client
     const client = new pg.Client({
         //if you want the following to work on your own computer
@@ -114,7 +135,7 @@ async function getAllFromDatabase() {
     await client.connect();
 
     const tableName = 'users';
-    const queryText = 'SELECT * FROM ' + tableName + ';';
+    const queryText = 'SELECT COUNT(*) AS row_count FROM ' + tableName + ' WHERE user_tickets > 0;';
 
     const res = await client.query(queryText);
     console.log(res);
@@ -122,7 +143,7 @@ async function getAllFromDatabase() {
     //close connection
     await client.end();
 
-    return res;
+    return parseInt(res.rows[0].row_count, 10);
 }
 
 app.get('', async (req, res) => {
@@ -135,27 +156,32 @@ app.get('', async (req, res) => {
 // this is both to get the num of tickets
 // as well as checking whether they are a valid user
 app.get('/login', async (req, res) => {
-    const tix = await getTixFromDatabase();
+    const tix = await getTixFromDatabase(req.query.username);
     res.send(tix);
 })
 
 // we want this to get the winner
 app.get('/winner', async (req, res) => {
-    const nameCards = await getAllFromDatabase();
-    let size = nameCards.length;
-    let index = Math.floor(getRandomArbitrary(1, size));
+    const totalValid = await getSizeDatabase();
+    console.log('SIZE: ' + totalValid);
+    let index = Math.floor(Math.random() * totalValid);
+    console.log('INDEX: ' + index);
 
-    const winner = await getUserFromDatabase(index - 1);
+    const winner = await getUserFromDatabase(index);
     //call database function
 
     res.send(winner);
 })
 
+app.get('/inctix', async (req, res) => {
+    const done = await updateTixDatabase(req.query.username);
+    const tix = await getTixFromDatabase(req.query.username);
+    res.send(tix.user_tickets);
+})
+
 app.post('/newuser', async (req, res) => {
     
-    console.log(req);
-    //console.log(req.id);
-    const response = await insertIntoDatabase(req.id);
+    const response = await insertIntoDatabase(req.body.id);
     res.send(response);
 
 })

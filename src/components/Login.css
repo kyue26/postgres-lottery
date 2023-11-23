@@ -2,4 +2,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    margin: 20px;
+}
+
+.Info {
+    display: block;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
 }
